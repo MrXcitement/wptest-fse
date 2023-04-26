@@ -1,0 +1,42 @@
+services:
+  db:
+    # Use mariadb image, supports both amd64 and arm64 architecture
+    image: mariadb:10.6.4-focal
+    command: '--default-authentication-plugin=mysql_native_password'
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: my-root-password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+    expose:
+      - 3306
+      - 33060
+    secrets:
+     - DB_PASSWORD
+     - DB_ROOT_PASSWORD
+  wordpress:
+    # 2023.04.25 'latest' is wordpress 6.2 / PHP 8.0 / Apache ?
+    image: wordpress:6.2-php8.0-apache
+    ports:
+      - 8080:80
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+      WORDPRESS_DB_NAME: wordpress
+    secrets:
+     - DB_PASSWORD
+    volumes:
+      - wp_data:/var/www/html
+secrets:
+  DB_PASSWORD:
+    file: ./secrets_db_password
+  DB_ROOT_PASSWORD:
+    file: ./secrets_db_root_password
+volumes:
+  db_data:
+  wp_data:
